@@ -302,7 +302,6 @@ class PatrolTester {
     String text, {
     @Deprecated('Use settleBeahvior argument instead') bool? andSettle,
     SettleBehavior? settleBehavior,
-    SettleBehavior? settle,
     Duration? visibleTimeout,
     Duration? settleTimeout,
   }) {
