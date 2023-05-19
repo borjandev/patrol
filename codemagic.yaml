@@ -1,0 +1,296 @@
+workflows:
+  test-emulatorwtf:
+    name: Patrol tests on emulator.wtf
+    instance_type: mac_mini_m1
+    max_build_duration: 30
+    working_directory: packages/patrol/example
+    environment:
+      groups:
+      # Add the group environment variables in Codemagic UI (either in Application/Team variables) - https://docs.codemagic.io/variables/environment-variable-groups/
+        - emulatorwtf # <-- (Includes EW_API_TOKEN)
+      flutter: 3.7.x
+
+    scripts:
+      - name: Set up debug.keystore
+        script: |
+          rm -f ~/.android/debug.keystore
+          keytool -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname 'CN=Android Debug,O=Android,C=US' -keyalg 'RSA' -keysize 2048 -validity 10000
+      
+      - name: Set up local.properties
+        script: |
+          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
+
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+
+      - name: Preload Flutter artifacts
+        script: |
+          flutter precache
+
+      - name: Set up Patrol CLI
+        working-directory: packages/patrol_cli
+        script: |
+          dart pub global activate --source path . && patrol
+      
+      - name: Generate Gradle wrapper
+        script: |
+          flutter build apk --debug --flavor=does-not-exist || true
+          
+      - name: patrol build android
+        script: |
+          patrol build android \
+            --exclude integration_test/permissions_location_test.dart \
+            --exclude integration_test/service_airplane_mode_test.dart \
+            --exclude integration_test/service_bluetooth_test.dart \
+            --exclude integration_test/webview_hackernews_test.dart \
+            --exclude integration_test/webview_leancode_test.dart \
+            --exclude integration_test/webview_login_test.dart \
+            --exclude integration_test/webview_stackoverflow_test.dart
+      
+      - name: Run tests with emulator.wtf
+        script: |
+          ew-cli \
+            --app build/app/outputs/apk/debug/app-debug.apk \
+            --test build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
+            --num-shards 3 \
+            --use-orchestrator \
+            --clear-package-data \
+            --record-video \
+            --timeout 10m \
+            --environment-variables packageName="pl.leancode.patrol.example" \
+            --outputs-dir test_artifacts \
+            --outputs summary,merged_results_xml,coverage,pulled_dirs,results_xml,logcat,captured_video
+        test_report: results/**/*.xml
+
+    artifacts:
+        - app/build/outputs/**/*.apk
+        - results/**/logcat.txt
+
+  test-ios-simulator:
+    name: iOS simulator
+    instance_type: mac_mini_m1
+    max_build_duration: 30
+    working_directory: packages/patrol/example
+    environment:
+      flutter: 3.7.x
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+
+      - name: Preload Flutter artifacts
+        script: |
+          flutter precache
+
+       - name: Set up Patrol CLI
+        working-directory: packages/patrol_cli
+        script: |
+          dart pub global activate --source path . && patrol
+      
+      - name: Generate Gradle wrapper
+        script: |
+          flutter build apk --debug --flavor=does-not-exist || true
+
+      - name: Run simulator
+        script: | 
+          TEST_DEVICE=$(xcrun simctl create test-device com.apple.CoreSimulator.SimDeviceType.iPhone-11 com.apple.CoreSimulator.SimRuntime.iOS-15-0)
+          xcrun simctl boot $TEST_DEVICE
+
+      - name: Run tests in Firebase Test Lab
+        script: |
+          xcrun simctl io booted recordVideo --codec=h264 "Iphone11.mp4" &
+          recordingpid="$!"
+          
+          xcrun simctl spawn booted log stream --type log --color none > all_simulator_logs.txt &
+          logpid="$!"
+          
+          TESTS_EXIT_CODE=0
+          patrol test \
+            --exclude integration_test/android_app_test.dart \
+            --exclude integration_test/service_airplane_mode_test.dart \
+            --exclude integration_test/service_bluetooth_test.dart \
+            --exclude integration_test/service_cellular_test.dart \
+            --exclude integration_test/service_wifi_test.dart \
+            --exclude integration_test/swipe_test.dart \
+            --exclude integration_test/webview_leancode_test.dart \
+            --exclude integration_test/webview_login_test.dart \
+            --exclude integration_test/webview_stackoverflow_test.dart || TESTS_EXIT_CODE=$?
+
+          kill -SIGINT $recordingpid
+          kill -SIGINT $logpid
+          xcrun simctl shutdown all
+          exit $EXIT_CODE
+
+    artifacts:
+      - "all_simulator_logs.txt"
+      - "Iphone11.mp4"
+
+  test-android-device-ftb:
+    name: Android device on FTL
+    instance_type: mac_mini_m1
+    max_build_duration: 30
+    working_directory: packages/patrol/example
+    environment:
+      groups:
+        - google_credentials # <-- (Includes GCLOUD_KEY_FILE, GOOGLE_CREDENTIALS)
+      vars:
+        FIREBASE_PROJECT: "YOUR_FIREBASE_PROJECT_NAME" # <-- Put your Firebase Project Name here
+      flutter: 3.7.x
+      
+    scripts:
+      - name: Set up debug.keystore
+        script: |
+          rm -f ~/.android/debug.keystore
+          keytool -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname 'CN=Android Debug,O=Android,C=US' -keyalg 'RSA' -keysize 2048 -validity 10000
+      
+      - name: Set up local.properties
+        script: |
+          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
+      
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+
+      - name: Preload Flutter artifacts
+        script: |
+          flutter precache
+
+       - name: Set up Patrol CLI
+        working-directory: packages/patrol_cli
+        script: |
+          dart pub global activate --source path . && patrol
+      
+      - name: Generate Gradle wrapper
+        script: |
+          flutter build apk --debug --flavor=does-not-exist || true
+      
+      - name: patrol build android
+        script: |
+          patrol build android \
+            --exclude integration_test/permissions_location_test.dart \
+            --exclude integration_test/service_airplane_mode_test.dart \
+            --exclude integration_test/service_bluetooth_test.dart \
+            --exclude integration_test/webview_hackernews_test.dart \
+            --exclude integration_test/webview_leancode_test.dart \
+            --exclude integration_test/webview_login_test.dart \
+            --exclude integration_test/webview_stackoverflow_test.dart
+      
+      - name: Run Firebase Test Lab tests
+        script: |
+          set -euo pipefail
+
+          RESULTS_DIR_NAME="$(date +"%Y-%m-%d_%H:%M:%S")"
+          echo "RESULTS_DIR_NAME=$RESULTS_DIR_NAME" >> $CM_ENV
+
+          exec gcloud firebase test android run \
+            --type instrumentation \
+            --app build/app/outputs/apk/debug/app-debug.apk \
+            --test build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
+            --device model=oriole,version=33,locale=en,orientation=portrait \
+            --timeout 10m \
+            --results-bucket="patrol_runs" \
+            --results-dir="$RESULTS_DIR_NAME" \
+            --use-orchestrator \
+            --environment-variables clearPackageData=true,packageName="pl.leancode.patrol.example"
+        ignore_failure: true
+
+      - name: Get test outputs from Google Cloud Storage
+        script: |
+          mkdir "test_outputs"
+          gsutil -m cp -r "gs://patrol_runs/${RESULTS_DIR_NAME}/oriole-33-en-portrait/*" "test_outputs"
+
+    artifacts:
+      - test_outputs
+
+  test-ios-device-ftb:
+    name: iOS device on FTL
+    instance_type: mac_mini_m1
+    max_build_duration: 30
+    working_directory: packages/patrol/example
+    environment:
+      flutter: 3.7.x
+      xcode: latest
+      cocoapods: default
+      groups:
+        - ios_credentials
+        - gcloud_credentials
+      vars:
+        FIREBASE_PROJECT: "flutter-integration-tests"
+        BUNDLE_ID: "io.codemagic.ftlflutter"
+        TEST_BUNDLE_ID: "io.codemagic.ftlflutter.uitests.xctrunner"
+    scripts:
+      - name: Configure Firebase access
+        script: |
+          set -e
+          echo $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS > ./gcloud_key_file.json          
+          gcloud auth activate-service-account --key-file=gcloud_key_file.json
+          gcloud --quiet config set project $FIREBASE_PROJECT
+
+      - keychain initialize
+      - app-store-connect fetch-signing-files ${BUNDLE_ID} --create
+      - app-store-connect fetch-signing-files ${TEST_BUNDLE_ID} --create
+      - keychain add-certificates
+      - xcode-project use-profiles --code-signing-setup-verbose-logging
+
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+
+      - name: Preload Flutter artifacts
+        script: |
+          flutter precache
+
+       - name: Set up Patrol CLI
+        working-directory: packages/patrol_cli
+        script: |
+          dart pub global activate --source path . && patrol
+      
+      - name: Generate Gradle wrapper
+        script: |
+          flutter build apk --debug --flavor=does-not-exist || true
+
+      - name: patrol build ios \
+        script: |
+          patrol build ios \
+            --exclude integration_test/android_app_test.dart \
+            --exclude integration_test/service_airplane_mode_test.dart \
+            --exclude integration_test/service_bluetooth_test.dart \
+            --exclude integration_test/service_cellular_test.dart \
+            --exclude integration_test/service_wifi_test.dart \
+            --exclude integration_test/swipe_test.dart \
+            --exclude integration_test/webview_leancode_test.dart \
+            --exclude integration_test/webview_login_test.dart \
+            --exclude integration_test/webview_stackoverflow_test.dart
+
+      - name: Run tests in Firebase Test Lab
+        script: |
+          dev_target="16.2"
+          product="build/ios_integ/Build/Products"
+          rm -rf "$product"
+
+          pushd "$product"
+          zip -r ios_tests.zip Release-iphoneos "Runner_iphoneos$dev_target-arm64.xctestrun"
+          popd
+
+          RESULTS_DIR_NAME="$(date +"%Y-%m-%d_%H:%M:%S")"
+          echo "RESULTS_DIR_NAME=$RESULTS_DIR_NAME" >> $CM_ENV
+
+          exec gcloud firebase test ios run \
+            --type xctest \
+            --test "$product/ios_tests.zip" \
+            --device model=iphone8,version="$dev_target",locale=en_US,orientation=portrait \
+            --timeout 10m \
+            --results-bucket=patrol_runs \
+            --results-dir="$RESULTS_DIR_NAME" \
+        ignore_failure: true
+
+      - name: Get test outputs from Google Cloud Storage
+        script: |
+          mkdir "test_outputs"
+          gsutil -m cp -r "gs://patrol_runs/${RESULTS_DIR_NAME}/oriole-33-en-portrait/*" "test_outputs"
+
+    artifacts:
+      - "test_outputs"
