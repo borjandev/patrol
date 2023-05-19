@@ -6,15 +6,10 @@ workflows:
     working_directory: packages/patrol/example
     environment:
       groups:
-      # Add the group environment variables in Codemagic UI (either in Application/Team variables) - https://docs.codemagic.io/variables/environment-variable-groups/
-        - emulatorwtf # <-- (Includes EW_API_TOKEN)
+        - emulatorwtf
       flutter: 3.7.12
 
     scripts:
-      - name: Check flutter version
-        script: |
-          flutter --version
-
       - name: Get Flutter packages
         script: |
           flutter packages pub get
@@ -61,10 +56,16 @@ workflows:
     max_build_duration: 30
     working_directory: packages/patrol/example
     environment:
-      flutter: 3.7.x
+      flutter: 3.7.12
       xcode: latest
       cocoapods: default
     scripts:
+      - name: Set up xcresultparser
+        script: |
+          brew tap a7ex/homebrew-formulae
+          brew install xcresultparser
+          xcresultparser
+
       - name: Get Flutter packages
         script: |
           flutter packages pub get
@@ -96,21 +97,19 @@ workflows:
           logpid="$!"
           
           TESTS_EXIT_CODE=0
-          patrol test \
-            --exclude integration_test/android_app_test.dart \
-            --exclude integration_test/service_airplane_mode_test.dart \
-            --exclude integration_test/service_bluetooth_test.dart \
-            --exclude integration_test/service_cellular_test.dart \
-            --exclude integration_test/service_wifi_test.dart \
-            --exclude integration_test/swipe_test.dart \
-            --exclude integration_test/webview_leancode_test.dart \
-            --exclude integration_test/webview_login_test.dart \
-            --exclude integration_test/webview_stackoverflow_test.dart || TESTS_EXIT_CODE=$?
+          patrol test || TESTS_EXIT_CODE=$?
 
           kill -SIGINT $recordingpid
           kill -SIGINT $logpid
           xcrun simctl shutdown all
-          exit $EXIT_CODE
+
+          exit 0
+
+      - name: Run tests in Firebase Test Lab
+        script: |
+          echo "XCRESULT_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "*.xcresult" -type d)"
+          xcresultparser -o junit $XCRESULT_PATH > junit.xml
+        test_report: junit.xml
 
     artifacts:
       - "all_simulator_logs.txt"
@@ -126,7 +125,7 @@ workflows:
         - google_credentials # <-- (Includes GCLOUD_KEY_FILE, GOOGLE_CREDENTIALS)
       vars:
         FIREBASE_PROJECT: "YOUR_FIREBASE_PROJECT_NAME" # <-- Put your Firebase Project Name here
-      flutter: 3.7.x
+      flutter: 3.7.12
       
     scripts:
       - name: Set up debug.keystore
@@ -199,7 +198,7 @@ workflows:
     max_build_duration: 30
     working_directory: packages/patrol/example
     environment:
-      flutter: 3.7.x
+      flutter: 3.7.12
       xcode: latest
       cocoapods: default
       groups:
