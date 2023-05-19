@@ -10,7 +10,7 @@ class PatrolTesterConfig {
     this.visibleTimeout = const Duration(seconds: 10),
     this.settleTimeout = const Duration(seconds: 10),
     @Deprecated('Use settleBeahvior argument instead') this.andSettle = true,
-    this.settleBehavior = SettleBehavior.settle,
+    this.settlePolicy = SettlePolicy.settle,
   });
 
   /// Time after which [PatrolFinder.waitUntilExists] fails if it doesn't find
@@ -32,20 +32,20 @@ class PatrolTesterConfig {
   ///
   /// [PatrolFinder.waitUntilVisible] is used internally by methods such as
   /// [PatrolFinder.tap] and [PatrolFinder.enterText] (unless disabled by
-  /// [settleBehavior]).
+  /// [settlePolicy]).
   final Duration settleTimeout;
 
   /// Whether to call [WidgetTester.pumpAndSettle] after actions such as
   /// [PatrolFinder.tap] and [PatrolFinder]. If false, only [WidgetTester.pump]
   /// is called.
-  @Deprecated('Use PatrolTester.settleBehavior instead')
+  @Deprecated('Use PatrolTester.settlePolicy instead')
   final bool andSettle;
 
   /// Defines which pump method should be called after actions such as
   /// [PatrolFinder.tap] and [PatrolFinder].
   ///
-  /// See [SettleBehavior] for more information.
-  final SettleBehavior settleBehavior;
+  /// See [SettlePolicy] for more information.
+  final SettlePolicy settlePolicy;
 
   /// Creates a copy of this config but with the given fields replaced with the
   /// new values.
@@ -54,7 +54,7 @@ class PatrolTesterConfig {
     Duration? visibleTimeout,
     Duration? settleTimeout,
     @Deprecated('Use settleBeahvior argument instead') bool? andSettle,
-    SettleBehavior? settleBehavior,
+    SettlePolicy? settlePolicy,
     String? appName,
     String? packageName,
     String? bundleId,
@@ -64,7 +64,7 @@ class PatrolTesterConfig {
       visibleTimeout: visibleTimeout ?? this.visibleTimeout,
       settleTimeout: settleTimeout ?? this.settleTimeout,
       andSettle: andSettle ?? this.andSettle,
-      settleBehavior: settleBehavior ?? this.settleBehavior,
+      settlePolicy: settlePolicy ?? this.settlePolicy,
     );
   }
 }
@@ -193,7 +193,7 @@ class PatrolTester {
   /// infinite animation to appear.
   ///
   /// See also [WidgetTester.pumpAndSettle].
-  Future<void> pumpAndMaybeSettle({
+  Future<void> pumpAndTrySettle({
     Duration duration = const Duration(milliseconds: 100),
     EnginePhase phase = EnginePhase.sendSemanticsUpdate,
     Duration timeout = const Duration(seconds: 10),
@@ -222,7 +222,7 @@ class PatrolTester {
   }) async {
     await tester.pumpWidget(widget, duration, phase);
     await _performPump(
-      settleBehavior: SettleBehavior.settle,
+      settlePolicy: SettlePolicy.settle,
       settleTimeout: timeout,
     );
   }
@@ -254,7 +254,7 @@ class PatrolTester {
   Future<void> tap(
     Finder finder, {
     @Deprecated('Use settleBeahvior argument instead') bool? andSettle,
-    SettleBehavior? settleBehavior,
+    SettlePolicy? settlePolicy,
     Duration? visibleTimeout,
     Duration? settleTimeout,
   }) {
@@ -264,9 +264,9 @@ class PatrolTester {
         timeout: visibleTimeout,
       );
       await tester.tap(resolvedFinder.first);
-      final settle = _chooseSettleBehavior(andSettle, settleBehavior);
+      final settle = _choosesettlePolicy(andSettle, settlePolicy);
       await _performPump(
-        settleBehavior: settle,
+        settlePolicy: settle,
         settleTimeout: settleTimeout,
       );
     });
@@ -301,7 +301,7 @@ class PatrolTester {
     Finder finder,
     String text, {
     @Deprecated('Use settleBeahvior argument instead') bool? andSettle,
-    SettleBehavior? settleBehavior,
+    SettlePolicy? settlePolicy,
     Duration? visibleTimeout,
     Duration? settleTimeout,
   }) {
@@ -311,9 +311,9 @@ class PatrolTester {
         timeout: visibleTimeout,
       );
       await tester.enterText(resolvedFinder.first, text);
-      final settle = _chooseSettleBehavior(andSettle, settleBehavior);
+      final settle = _choosesettlePolicy(andSettle, settlePolicy);
       await _performPump(
-        settleBehavior: settle,
+        settlePolicy: settle,
         settleTimeout: settleTimeout,
       );
     });
@@ -411,7 +411,7 @@ class PatrolTester {
     int maxIteration = defaultScrollMaxIteration,
     Duration duration = const Duration(milliseconds: 50),
     @Deprecated('Use settleBeahvior argument instead') bool? andSettle,
-    SettleBehavior? settleBehavior,
+    SettlePolicy? settlePolicy,
   }) {
     return TestAsyncUtils.guard(() async {
       final viewPatrolFinder = PatrolFinder(finder: view, tester: this);
@@ -425,9 +425,9 @@ class PatrolTester {
       }
       await Scrollable.ensureVisible(tester.firstElement(finder));
 
-      final settle = _chooseSettleBehavior(andSettle, settleBehavior);
+      final settle = _choosesettlePolicy(andSettle, settlePolicy);
       await _performPump(
-        settleBehavior: settle,
+        settlePolicy: settle,
         settleTimeout: config.settleTimeout,
       );
 
@@ -461,7 +461,7 @@ class PatrolTester {
     int maxIteration = defaultScrollMaxIteration,
     Duration duration = const Duration(milliseconds: 50),
     @Deprecated('Use settleBeahvior argument instead') bool? andSettle,
-    SettleBehavior? settleBehavior,
+    SettlePolicy? settlePolicy,
   }) {
     return TestAsyncUtils.guard(() async {
       var viewPatrolFinder = PatrolFinder(finder: view, tester: this);
@@ -476,9 +476,9 @@ class PatrolTester {
       }
       await Scrollable.ensureVisible(tester.firstElement(finder));
 
-      final settle = _chooseSettleBehavior(andSettle, settleBehavior);
+      final settle = _choosesettlePolicy(andSettle, settlePolicy);
       await _performPump(
-        settleBehavior: settle,
+        settlePolicy: settle,
         settleTimeout: config.settleTimeout,
       );
 
@@ -501,7 +501,7 @@ class PatrolTester {
     int maxScrolls = defaultScrollMaxIteration,
     Duration duration = const Duration(milliseconds: 50),
     @Deprecated('Use settleBeahvior argument instead') bool? andSettle,
-    SettleBehavior? settleBehavior,
+    SettlePolicy? settlePolicy,
   }) async {
     assert(maxScrolls > 0, 'maxScrolls must be positive number');
     scrollable ??= find.byType(Scrollable);
@@ -528,14 +528,14 @@ class PatrolTester {
           break;
       }
 
-      final settle = _chooseSettleBehavior(andSettle, settleBehavior);
+      final settle = _choosesettlePolicy(andSettle, settlePolicy);
       final resolvedFinder = await dragUntilExists(
         finder: finder,
         view: scrollablePatrolFinder.first,
         moveStep: moveStep,
         maxIteration: maxScrolls,
         duration: duration,
-        settleBehavior: settle,
+        settlePolicy: settle,
       );
 
       return resolvedFinder;
@@ -557,7 +557,7 @@ class PatrolTester {
     int maxScrolls = defaultScrollMaxIteration,
     Duration duration = const Duration(milliseconds: 50),
     @Deprecated('Use settleBeahvior argument instead') bool? andSettle,
-    SettleBehavior? settleBehavior,
+    SettlePolicy? settlePolicy,
   }) async {
     assert(maxScrolls > 0, 'maxScrolls must be positive number');
     scrollable ??= find.byType(Scrollable);
@@ -584,14 +584,14 @@ class PatrolTester {
           break;
       }
 
-      final settle = _chooseSettleBehavior(andSettle, settleBehavior);
+      final settle = _choosesettlePolicy(andSettle, settlePolicy);
       final resolvedFinder = await dragUntilVisible(
         finder: finder,
         view: scrollablePatrolFinder.first,
         moveStep: moveStep,
         maxIteration: maxScrolls,
         duration: duration,
-        settleBehavior: settle,
+        settlePolicy: settle,
       );
 
       return resolvedFinder;
@@ -599,16 +599,16 @@ class PatrolTester {
   }
 
   Future<void> _performPump({
-    required SettleBehavior? settleBehavior,
+    required SettlePolicy? settlePolicy,
     required Duration? settleTimeout,
   }) async {
-    final settle = settleBehavior ?? config.settleBehavior;
+    final settle = settlePolicy ?? config.settlePolicy;
     final timeout = settleTimeout ?? config.settleTimeout;
-    if (settle == SettleBehavior.maybeSettle) {
-      await pumpAndMaybeSettle(
+    if (settle == SettlePolicy.trySettle) {
+      await pumpAndTrySettle(
         timeout: timeout,
       );
-    } else if (settle == SettleBehavior.settle) {
+    } else if (settle == SettlePolicy.settle) {
       await pumpAndSettle(
         timeout: timeout,
       );
@@ -617,18 +617,18 @@ class PatrolTester {
     }
   }
 
-  SettleBehavior? _chooseSettleBehavior(
+  SettlePolicy? _choosesettlePolicy(
     bool? andSettle,
-    SettleBehavior? settleBehavior,
+    SettlePolicy? settlePolicy,
   ) {
-    SettleBehavior? settle;
+    SettlePolicy? settle;
     if (andSettle == null) {
-      settle = settleBehavior;
+      settle = settlePolicy;
     } else {
       if (andSettle) {
-        settle = SettleBehavior.settle;
+        settle = SettlePolicy.settle;
       } else {
-        settle = SettleBehavior.none;
+        settle = SettlePolicy.none;
       }
     }
     return settle;
@@ -636,13 +636,13 @@ class PatrolTester {
 }
 
 /// Defines which pump method should be used.
-enum SettleBehavior {
+enum SettlePolicy {
   /// When pumping should be performed, [PatrolTester.pump] will be called.
   none,
 
   /// When pumping should be performed, [PatrolTester.pumpAndSettle] will be called.
   settle,
 
-  /// When pumping should be performed, [PatrolTester.pumpAndMaybeSettle] will be called.
-  maybeSettle,
+  /// When pumping should be performed, [PatrolTester.pumpAndTrySettle] will be called.
+  trySettle,
 }
