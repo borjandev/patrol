@@ -56,11 +56,11 @@ workflows:
             --environment-variables packageName="pl.leancode.patrol.example" \
             --outputs-dir test_artifacts \
             --outputs summary,merged_results_xml,coverage,pulled_dirs,results_xml,logcat,captured_video
-        test_report: results/**/*.xml
+        test_report: test_artifacts/*.xml
 
     artifacts:
-        - app/build/outputs/**/*.apk
-        - results/**/logcat.txt
+        - test_artifacts
+        - test_artifacts/*.xml
 
   test-ios-simulator:
     name: iOS simulator
