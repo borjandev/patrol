@@ -64,7 +64,6 @@ workflows:
         script: |
           brew tap a7ex/homebrew-formulae
           brew install xcresultparser
-          xcresultparser
 
       - name: Get Flutter packages
         script: |
