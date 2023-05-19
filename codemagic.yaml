@@ -29,7 +29,7 @@ workflows:
           flutter precache
 
       - name: Set up Patrol CLI
-        working-directory: packages/patrol_cli
+        working_directory: packages/patrol_cli
         script: |
           dart pub global activate --source path . && patrol
       
@@ -85,8 +85,8 @@ workflows:
         script: |
           flutter precache
 
-       - name: Set up Patrol CLI
-        working-directory: packages/patrol_cli
+      - name: Set up Patrol CLI
+        working_directory: packages/patrol_cli
         script: |
           dart pub global activate --source path . && patrol
       
@@ -158,8 +158,8 @@ workflows:
         script: |
           flutter precache
 
-       - name: Set up Patrol CLI
-        working-directory: packages/patrol_cli
+      - name: Set up Patrol CLI
+        working_directory: packages/patrol_cli
         script: |
           dart pub global activate --source path . && patrol
       
@@ -243,8 +243,8 @@ workflows:
         script: |
           flutter precache
 
-       - name: Set up Patrol CLI
-        working-directory: packages/patrol_cli
+      - name: Set up Patrol CLI
+        working_directory: packages/patrol_cli
         script: |
           dart pub global activate --source path . && patrol
       
