@@ -8,7 +8,7 @@ workflows:
       groups:
       # Add the group environment variables in Codemagic UI (either in Application/Team variables) - https://docs.codemagic.io/variables/environment-variable-groups/
         - emulatorwtf # <-- (Includes EW_API_TOKEN)
-      flutter: 3.7.x
+      flutter: 3.7.12
 
     scripts:
       - name: Set up debug.keystore
