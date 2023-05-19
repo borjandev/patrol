@@ -628,7 +628,7 @@ class PatrolTester {
       if (andSettle) {
         settle = SettlePolicy.settle;
       } else {
-        settle = SettlePolicy.none;
+        settle = SettlePolicy.noSettle;
       }
     }
     return settle;
@@ -640,7 +640,7 @@ class PatrolTester {
 /// It's usually useful when dealing with situations involving finite and infinite animations.
 enum SettlePolicy {
   /// When pumping should be performed, [PatrolTester.pump] will be called.
-  none,
+  noSettle,
 
   /// When pumping should be performed, [PatrolTester.pumpAndSettle] will be called.
   settle,
