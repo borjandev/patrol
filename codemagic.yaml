@@ -84,21 +84,22 @@ workflows:
 
       - name: Run simulator
         script: | 
-          TEST_DEVICE=$(xcrun simctl create test-device com.apple.CoreSimulator.SimDeviceType.iPhone-11 com.apple.CoreSimulator.SimRuntime.iOS-15-0)
-          xcrun simctl boot $TEST_DEVICE
+          # TEST_DEVICE=$(xcrun simctl create test-device com.apple.CoreSimulator.SimDeviceType.iPhone-11 com.apple.CoreSimulator.SimRuntime.iOS-15-0)
+          # xcrun simctl boot $TEST_DEVICE
+          echo "hello"
 
       - name: Run tests in Firebase Test Lab
         script: |
-          xcrun simctl io booted recordVideo --codec=h264 "Iphone11.mp4" &
-          recordingpid="$!"
+          # xcrun simctl io booted recordVideo --codec=h264 "Iphone11.mp4" &
+          # recordingpid="$!"
           
-          xcrun simctl spawn booted log stream --type log --color none > all_simulator_logs.txt &
-          logpid="$!"
+          # xcrun simctl spawn booted log stream --type log --color none > all_simulator_logs.txt &
+          # logpid="$!"
           
           TESTS_EXIT_CODE=0
-          patrol test || TESTS_EXIT_CODE=$?
+          patrol test --device="iPhone 14"
 
-          kill -SIGINT $recordingpid
+          # kill -SIGINT $recordingpid
           kill -SIGINT $logpid
           xcrun simctl shutdown all
 
