@@ -11,14 +11,9 @@ workflows:
       flutter: 3.7.12
 
     scripts:
-      - name: Set up debug.keystore
+      - name: Check flutter version
         script: |
-          rm -f ~/.android/debug.keystore
-          keytool -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname 'CN=Android Debug,O=Android,C=US' -keyalg 'RSA' -keysize 2048 -validity 10000
-      
-      - name: Set up local.properties
-        script: |
-          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
+          flutter --version
 
       - name: Get Flutter packages
         script: |
