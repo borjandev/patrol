@@ -34,14 +34,7 @@ workflows:
           
       - name: patrol build android
         script: |
-          patrol build android \
-            --exclude integration_test/permissions_location_test.dart \
-            --exclude integration_test/service_airplane_mode_test.dart \
-            --exclude integration_test/service_bluetooth_test.dart \
-            --exclude integration_test/webview_hackernews_test.dart \
-            --exclude integration_test/webview_leancode_test.dart \
-            --exclude integration_test/webview_login_test.dart \
-            --exclude integration_test/webview_stackoverflow_test.dart
+          patrol build android
       
       - name: Run tests with emulator.wtf
         script: |
