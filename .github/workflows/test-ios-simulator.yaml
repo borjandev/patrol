@@ -8,7 +8,7 @@ on:
 jobs:
   run_tests:
     name: "Flutter ${{ matrix.flutter-version }} on ${{ matrix.device }}, ${{ matrix.os }} ${{ matrix.os_version }}"
-    runs-on: macos-latest
+    runs-on: macos-13
     timeout-minutes: 60
     outputs:
       failure_status: ${{ steps.set_status.outputs.failure_status }}
@@ -29,6 +29,18 @@ jobs:
     steps:
       - name: Clone repository
         uses: actions/checkout@v3
+        
+      - name: Switch Xcode version
+        run: |
+          xcode-select --print-path
+          echo "---"
+          xcodebuild -version
+          echo "---"
+          sudo xcode-select --switch /Applications/Xcode_14.3.app/Contents/Developer
+          echo "---"
+          xcode-select --print-path
+          echo "---"
+          xcodebuild -version
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
