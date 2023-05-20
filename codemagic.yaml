@@ -57,7 +57,7 @@ workflows:
     working_directory: packages/patrol/example
     environment:
       flutter: 3.7.12
-      xcode: latest
+      xcode: 14.2
       cocoapods: default
     scripts:
       - name: Set up xcresultparser
@@ -84,37 +84,35 @@ workflows:
 
       - name: Run simulator
         script: | 
-          # TEST_DEVICE=$(xcrun simctl create test-device com.apple.CoreSimulator.SimDeviceType.iPhone-11 com.apple.CoreSimulator.SimRuntime.iOS-15-0)
-          # xcrun simctl boot $TEST_DEVICE
-          echo "hello"
+          xcrun simctl boot "iPhone 14 Pro Max"
 
-      - name: Run tests in Firebase Test Lab
+      - name: Run tests on iPhone 14 Pro Max simulator
         script: |
-          # xcrun simctl io booted recordVideo --codec=h264 "Iphone11.mp4" &
-          # recordingpid="$!"
+          xcrun simctl io booted recordVideo --codec=h264 "video.mp4" &
+          recordingpid="$!"
           
-          # xcrun simctl spawn booted log stream --type log --color none > all_simulator_logs.txt &
-          # logpid="$!"
+          xcrun simctl spawn booted log stream --type log --color none > all_simulator_logs.txt &
+          logpid="$!"
           
           TESTS_EXIT_CODE=0
-          patrol test --device="iPhone 14"
+          patrol test --device="iPhone 14 Pro Max"
 
-          # kill -SIGINT $recordingpid
+          kill -SIGINT $recordingpid
           kill -SIGINT $logpid
           xcrun simctl shutdown all
 
           exit 0
 
-      - name: Run tests in Firebase Test Lab
+      - name: Create test report
         script: |
           XCRESULT_PATH="$(find ~/Library/Developer/Xcode/DerivedData -name "*.xcresult" -type d)"
           echo $XCRESULT_PATH
-          xcresultparser -o junit $XCRESULT_PATH > junit.xml
+          xcresultparser -o junit "$XCRESULT_PATH" > junit.xml
         test_report: junit.xml
 
     artifacts:
       - "all_simulator_logs.txt"
-      - "Iphone11.mp4"
+      - "video.mp4"
 
   test-android-device-ftb:
     name: Android device on FTL
