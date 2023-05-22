@@ -175,14 +175,12 @@ workflows:
             --environment-variables clearPackageData=true,packageName="pl.leancode.patrol.example"
         ignore_failure: true
 
-      - name: Get test outputs from Google Cloud Storage
+      - name: Get test outputs from GCS and create test report
         script: |
           mkdir "test_outputs"
           gsutil -m cp -r "gs://patrol_runs/${RESULTS_DIR_NAME}/oriole-33-en-portrait/*" "test_outputs"
-          
-      - name: Create test report
         test_report: test_outputs/*.xml
-
+          
     artifacts:
       - test_outputs
 
