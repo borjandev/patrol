@@ -118,20 +118,9 @@ workflows:
     environment:
       groups:
         - google_credentials # <-- (Includes GCLOUD_KEY_FILE, GOOGLE_CREDENTIALS)
-      vars:
-        FIREBASE_PROJECT: "YOUR_FIREBASE_PROJECT_NAME" # <-- Put your Firebase Project Name here
       flutter: 3.7.12
       
-    scripts:
-      - name: Set up debug.keystore
-        script: |
-          rm -f ~/.android/debug.keystore
-          keytool -genkeypair -alias androiddebugkey -keypass android -keystore ~/.android/debug.keystore -storepass android -dname 'CN=Android Debug,O=Android,C=US' -keyalg 'RSA' -keysize 2048 -validity 10000
-      
-      - name: Set up local.properties
-        script: |
-          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
-      
+    scripts:  
       - name: Get Flutter packages
         script: |
           flutter packages pub get
@@ -148,6 +137,16 @@ workflows:
       - name: Generate Gradle wrapper
         script: |
           flutter build apk --debug --flavor=does-not-exist || true
+          
+      - name: Set up FTL
+        script: |
+          echo $GCLOUD_KEY_FILE | base64 --decode > ./gcloud_key_file.json
+
+          # Using the gcloud CLI (preinstalled on Codemagic) authenticate using the service account key
+          gcloud auth activate-service-account --key-file=gcloud_key_file.json
+
+          # Select YOUR Firebase project through which want to run the tests
+          gcloud --quiet config set project $FIREBASE_PROJECT
       
       - name: patrol build android
         script: |
