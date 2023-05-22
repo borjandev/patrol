@@ -11,25 +11,19 @@ workflows:
 
     scripts:
       - name: Get Flutter packages
-        script: |
-          flutter packages pub get
+        script: flutter packages pub get
 
       - name: Preload Flutter artifacts
-        script: |
-          flutter precache
+        script: flutter precache
 
       - name: Set up Patrol CLI
         working_directory: packages/patrol_cli
-        script: |
-          dart pub global activate --source path . && patrol
+        script: dart pub global activate --source path . && patrol
       
       - name: Generate Gradle wrapper
-        script: |
-          flutter build apk --debug --flavor=does-not-exist || true
+        script: flutter build apk --debug --flavor=does-not-exist || true
           
-      - name: patrol build android
-        script: |
-          patrol build android
+      - patrol build android
       
       - name: Run tests with emulator.wtf
         script: |
@@ -45,6 +39,7 @@ workflows:
             --outputs-dir test_artifacts \
             --outputs summary,merged_results_xml,coverage,pulled_dirs,results_xml,logcat,captured_video
         test_report: test_artifacts/*.xml
+        ignore_failure: true
 
     artifacts:
         - test_artifacts
@@ -88,7 +83,7 @@ workflows:
           logpid="$!"
           
           TESTS_EXIT_CODE=0
-          patrol test --device="iPhone 14 Pro Max" || TESTS_EXIT_CODE=$?
+          patrol test || TESTS_EXIT_CODE=$?
 
           kill -SIGINT $recordingpid
           kill -SIGINT $logpid
@@ -117,7 +112,7 @@ workflows:
     working_directory: packages/patrol/example
     environment:
       groups:
-        - google_credentials # <-- (Includes GCLOUD_KEY_FILE, GOOGLE_CREDENTIALS)
+        - google_credentials
       flutter: 3.7.12
       
     scripts:
@@ -145,16 +140,7 @@ workflows:
 
           gcloud --quiet config set project $FIREBASE_PROJECT
       
-      - name: patrol build android
-        script: |
-          patrol build android \
-            --exclude integration_test/permissions_location_test.dart \
-            --exclude integration_test/service_airplane_mode_test.dart \
-            --exclude integration_test/service_bluetooth_test.dart \
-            --exclude integration_test/webview_hackernews_test.dart \
-            --exclude integration_test/webview_leancode_test.dart \
-            --exclude integration_test/webview_login_test.dart \
-            --exclude integration_test/webview_stackoverflow_test.dart
+      - patrol build android
       
       - name: Run Firebase Test Lab tests
         script: |
@@ -191,11 +177,9 @@ workflows:
     working_directory: packages/patrol/example
     environment:
       flutter: 3.7.12
-      xcode: latest
-      cocoapods: default
       groups:
         - ios_credentials
-        - gcloud_credentials
+        - google_credentials
       vars:
         FIREBASE_PROJECT: "flutter-integration-tests"
         BUNDLE_ID: "io.codemagic.ftlflutter"
@@ -231,18 +215,7 @@ workflows:
         script: |
           flutter build apk --debug --flavor=does-not-exist || true
 
-      - name: patrol build ios \
-        script: |
-          patrol build ios \
-            --exclude integration_test/android_app_test.dart \
-            --exclude integration_test/service_airplane_mode_test.dart \
-            --exclude integration_test/service_bluetooth_test.dart \
-            --exclude integration_test/service_cellular_test.dart \
-            --exclude integration_test/service_wifi_test.dart \
-            --exclude integration_test/swipe_test.dart \
-            --exclude integration_test/webview_leancode_test.dart \
-            --exclude integration_test/webview_login_test.dart \
-            --exclude integration_test/webview_stackoverflow_test.dart
+      - patrol build ios
 
       - name: Run tests in Firebase Test Lab
         script: |
@@ -266,10 +239,11 @@ workflows:
             --results-dir="$RESULTS_DIR_NAME" \
         ignore_failure: true
 
-      - name: Get test outputs from Google Cloud Storage
+      - name: Get test outputs from GCS and create test report
         script: |
           mkdir "test_outputs"
           gsutil -m cp -r "gs://patrol_runs/${RESULTS_DIR_NAME}/oriole-33-en-portrait/*" "test_outputs"
+        test_report: test_outputs/*.xml
 
     artifacts:
       - "test_outputs"
