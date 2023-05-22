@@ -68,7 +68,8 @@ jobs:
             --exclude integration_test/webview_hackernews_test.dart \
             --exclude integration_test/webview_leancode_test.dart \
             --exclude integration_test/webview_login_test.dart \
-            --exclude integration_test/webview_stackoverflow_test.dart
+            --exclude integration_test/webview_stackoverflow_test.dart \
+            --verbose
 
       - name: Upload APKs to emulator.wtf and wait for tests to finish
         id: tests_step
