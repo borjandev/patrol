@@ -120,32 +120,29 @@ workflows:
         - google_credentials # <-- (Includes GCLOUD_KEY_FILE, GOOGLE_CREDENTIALS)
       flutter: 3.7.12
       
-    scripts:  
+    scripts:
+      - name: Installl crcmod
+        script: pip3 install -U crcmod
+        
       - name: Get Flutter packages
-        script: |
-          flutter packages pub get
+        script: flutter packages pub get
 
       - name: Preload Flutter artifacts
-        script: |
-          flutter precache
+        script: flutter precache
 
       - name: Set up Patrol CLI
         working_directory: packages/patrol_cli
-        script: |
-          dart pub global activate --source path . && patrol
+        script: dart pub global activate --source path . && patrol
       
       - name: Generate Gradle wrapper
-        script: |
-          flutter build apk --debug --flavor=does-not-exist || true
+        script: flutter build apk --debug --flavor=does-not-exist || true
           
       - name: Set up FTL
         script: |
           echo $GCLOUD_KEY_FILE | base64 --decode > ./gcloud_key_file.json
 
-          # Using the gcloud CLI (preinstalled on Codemagic) authenticate using the service account key
           gcloud auth activate-service-account --key-file=gcloud_key_file.json
 
-          # Select YOUR Firebase project through which want to run the tests
           gcloud --quiet config set project $FIREBASE_PROJECT
       
       - name: patrol build android
@@ -182,6 +179,9 @@ workflows:
         script: |
           mkdir "test_outputs"
           gsutil -m cp -r "gs://patrol_runs/${RESULTS_DIR_NAME}/oriole-33-en-portrait/*" "test_outputs"
+          
+      - name: Create test report
+        test_report: test_outputs/*.xml
 
     artifacts:
       - test_outputs
