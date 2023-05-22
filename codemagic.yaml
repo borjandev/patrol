@@ -57,34 +57,27 @@ workflows:
     working_directory: packages/patrol/example
     environment:
       flutter: 3.7.12
-      xcode: 14.2
-      cocoapods: default
     scripts:
+      - name: Get Flutter packages
+        script: flutter packages pub get
+
+      - name: Preload Flutter artifacts
+        script: flutter precache
+
+      - name: Set up Patrol CLI
+        working_directory: packages/patrol_cli
+        script: dart pub global activate --source path . && patrol
+      
+      - name: Generate Gradle wrapper
+        script: flutter build apk --debug --flavor=does-not-exist || true
+        
       - name: Set up xcresultparser
         script: |
           brew tap a7ex/homebrew-formulae
           brew install xcresultparser
 
-      - name: Get Flutter packages
-        script: |
-          flutter packages pub get
-
-      - name: Preload Flutter artifacts
-        script: |
-          flutter precache
-
-      - name: Set up Patrol CLI
-        working_directory: packages/patrol_cli
-        script: |
-          dart pub global activate --source path . && patrol
-      
-      - name: Generate Gradle wrapper
-        script: |
-          flutter build apk --debug --flavor=does-not-exist || true
-
       - name: Run simulator
-        script: | 
-          xcrun simctl boot "iPhone 14 Pro Max"
+        script: xcrun simctl boot "iPhone 14 Pro Max"
 
       - name: Run tests on iPhone 14 Pro Max simulator
         script: |
@@ -95,24 +88,27 @@ workflows:
           logpid="$!"
           
           TESTS_EXIT_CODE=0
-          patrol test --device="iPhone 14 Pro Max"
+          patrol test --device="iPhone 14 Pro Max" || TESTS_EXIT_CODE=$?
 
           kill -SIGINT $recordingpid
           kill -SIGINT $logpid
           xcrun simctl shutdown all
 
-          exit 0
+          exit TESTS_EXIT_CODE
 
       - name: Create test report
         script: |
           XCRESULT_PATH="$(find ~/Library/Developer/Xcode/DerivedData -name "*.xcresult" -type d)"
-          echo $XCRESULT_PATH
-          xcresultparser -o junit "$XCRESULT_PATH" > junit.xml
-        test_report: junit.xml
+          echo "XCRESULT_PATH=$XCRESULT_PATH" >> $CM_ENV
+          xcresultparser -o junit "$XCRESULT_PATH" > test_report.xml
+        test_report: test_report.xml
+        ignore_failure: true
 
     artifacts:
       - "all_simulator_logs.txt"
       - "video.mp4"
+      - "${XCRESULT_PATH}"
+      - "test_report.xml"
 
   test-android-device-ftb:
     name: Android device on FTL
