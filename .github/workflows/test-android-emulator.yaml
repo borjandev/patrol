@@ -51,9 +51,6 @@ jobs:
         working-directory: packages/patrol_cli
         run: dart pub global activate --source path . && patrol
 
-      - name: Generate Gradle wrapper
-        run: flutter build apk --debug --flavor=does-not-exist || true
-
       - name: Install ew-cli
         run: |
           mkdir -p "$HOME/bin"
