@@ -94,7 +94,8 @@ workflows:
           kill -SIGINT $logpid
           xcrun simctl shutdown all
 
-          exit TESTS_EXIT_CODE
+          exit $TESTS_EXIT_CODE
+        ignore_failure: true
 
       - name: Create test report
         script: |
@@ -102,7 +103,6 @@ workflows:
           echo "XCRESULT_PATH=$XCRESULT_PATH" >> $CM_ENV
           xcresultparser -o junit "$XCRESULT_PATH" > test_report.xml
         test_report: test_report.xml
-        ignore_failure: true
 
     artifacts:
       - "all_simulator_logs.txt"
