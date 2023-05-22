@@ -73,6 +73,9 @@ workflows:
 
       - name: Run simulator
         script: xcrun simctl boot "iPhone 14 Pro Max"
+        
+      - name: Set simulator location
+        script: xcrun simctl location booted set 52.17469,21.03193
 
       - name: Run tests on iPhone 14 Pro Max simulator
         script: |
@@ -115,10 +118,7 @@ workflows:
         - google_credentials
       flutter: 3.7.12
       
-    scripts:
-      - name: Installl crcmod
-        script: pip3 install -U crcmod
-        
+    scripts:  
       - name: Get Flutter packages
         script: flutter packages pub get
 
@@ -160,6 +160,9 @@ workflows:
             --use-orchestrator \
             --environment-variables clearPackageData=true,packageName="pl.leancode.patrol.example"
         ignore_failure: true
+        
+      - name: Installl crcmod
+        script: pip3 install -U crcmod
 
       - name: Get test outputs from GCS and create test report
         script: |
