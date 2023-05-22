@@ -36,14 +36,14 @@ workflows:
             --record-video \
             --timeout 10m \
             --environment-variables packageName="pl.leancode.patrol.example" \
-            --outputs-dir test_artifacts \
+            --outputs-dir test_outputs \
             --outputs summary,merged_results_xml,coverage,pulled_dirs,results_xml,logcat,captured_video
-        test_report: test_artifacts/*.xml
+        test_report: test_outputs/*.xml
         ignore_failure: true
 
     artifacts:
-        - test_artifacts
-        - test_artifacts/*.xml
+        - test_outputs
+        - test_outputs/*.xml
 
   test-ios-simulator:
     name: iOS simulator
@@ -171,7 +171,10 @@ workflows:
         test_report: test_outputs/*.xml
           
     artifacts:
-      - test_outputs
+      - "test_outputs/*.xml"
+      - "test_outputs/video.mp4"
+      - "test_outputs/test_cases"
+      - "test_outputs/logcat"
 
   test-ios-device-ftb:
     name: iOS device on FTL
