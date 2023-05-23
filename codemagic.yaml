@@ -10,6 +10,8 @@ workflows:
       - name: Set Android SDK Tools Path
         script: |
           kextstat | grep -i "com.apple.hypervisor"
+          echo "---"
+          ls /System/Library/Frameworks/Hypervisor.framework
           export ANDROID_HOME=${ANDROID_SDK_ROOT}
           export PATH=$PATH:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
           export PATH=$PATH:${ANDROID_SDK_ROOT}/emulator
