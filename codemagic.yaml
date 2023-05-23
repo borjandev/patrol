@@ -26,12 +26,12 @@ workflows:
           export PATH=$PATH:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
           yes | sdkmanager --licenses
           sdkmanager "emulator"
-          sdkmanager "system-images;android-31;default;x86_64"
+          sdkmanager "system-images;android-30;aosp_atd;arm64-v8a"
           
       - name: Create and configure emulator
         script: |
           export PATH=$PATH:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
-          avdmanager -s create avd -n MyAVD -k "system-images;android-31;default;x86_64"
+          avdmanager -s create avd -n MyAVD -k "system-images;android-30;aosp_atd;arm64-v8a"
         
       - name: Get Flutter packages
         script: flutter packages pub get
