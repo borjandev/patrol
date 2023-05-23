@@ -31,7 +31,7 @@ workflows:
       - name: Create and configure emulator
         script: |
           export PATH=$PATH:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
-          avdmanager -s create avd -n MyAVD -k "$ANDROID_IMAGE"
+          avdmanager -s create avd -n MyAVD -k "system-images;android-31;default;x86_64"
           echo "hw.gpu.enabled=yes" >> ~/.android/avd/MyAVD.avd/config.ini
           echo "hw.gpu.mode=swiftshader_indirect" >> ~/.android/avd/MyAVD.avd/config.ini
           echo "hw.ramSize=4096" >> ~/.android/avd/MyAVD.avd/config.ini
