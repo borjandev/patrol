@@ -28,6 +28,7 @@ workflows:
         script: |
           export PATH=$PATH:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
           yes | sdkmanager --licenses
+          sdkmanager --update
           sdkmanager "emulator"
           sdkmanager "system-images;android-30;aosp_atd;arm64-v8a"
           
