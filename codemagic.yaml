@@ -1,4 +1,90 @@
 workflows:
+  test-android-own-simulator:
+    name: Own Android simulator
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    working_directory: packages/patrol/example
+    environment:
+      flutter: 3.7.12
+      simulator_env:
+        paths:
+          - ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
+          - ${ANDROID_SDK_ROOT}/emulator
+          - ${ANDROID_SDK_ROOT}/platform-tools
+    scripts:
+      - name: Show files
+        script: |
+          ls ${ANDROID_SDK_ROOT}
+          echo "---"
+          ls cmdline-tools
+          echo "---"
+          ls cmdline-tools/latest/bin
+          echo "---"
+          ls ${ANDROID_SDK_ROOT}/emulator
+          echo "---"
+          ls ${ANDROID_SDK_ROOT}/platform-tools
+          echo "---"
+          
+      - name: Get Android Image
+        script: |
+          yes | sdkmanager --licenses
+          sdkmanager "system-images;android-31;default;x86_64"
+        
+      - name: Get Flutter packages
+        script: flutter packages pub get
+
+      - name: Preload Flutter artifacts
+        script: flutter precache
+
+      - name: Set up Patrol CLI
+        working_directory: packages/patrol_cli
+        script: dart pub global activate --source path . && patrol
+      
+      - name: Generate Gradle wrapper
+        script: flutter build apk --debug --flavor=does-not-exist || true
+        
+      - name: Set up xcresultparser
+        script: |
+          brew tap a7ex/homebrew-formulae
+          brew install xcresultparser
+
+      - name: Run simulator
+        script: xcrun simctl boot "iPhone 14 Pro Max"
+        
+      - name: Set simulator location
+        script: xcrun simctl location booted set 52.17469,21.03193
+
+      - name: Run tests on iPhone 14 Pro Max simulator
+        script: |
+          xcrun simctl io booted recordVideo --codec=h264 "video.mp4" &
+          recordingpid="$!"
+          
+          xcrun simctl spawn booted log stream --type log --color none > all_simulator_logs.txt &
+          logpid="$!"
+          
+          TESTS_EXIT_CODE=0
+          patrol test || TESTS_EXIT_CODE=$?
+
+          kill -SIGINT $recordingpid
+          kill -SIGINT $logpid
+          xcrun simctl shutdown all
+
+          exit $TESTS_EXIT_CODE
+        ignore_failure: true
+
+      - name: Create test report
+        script: |
+          XCRESULT_PATH="$(find ~/Library/Developer/Xcode/DerivedData -name "*.xcresult" -type d)"
+          echo "XCRESULT_PATH=$XCRESULT_PATH" >> $CM_ENV
+          xcresultparser -o junit "$XCRESULT_PATH" > test_report.xml
+        test_report: test_report.xml
+
+    artifacts:
+      - "all_simulator_logs.txt"
+      - "video.mp4"
+      - "${XCRESULT_PATH}"
+      - "test_report.xml"
+  
   test-emulatorwtf:
     name: Patrol tests on emulator.wtf
     instance_type: mac_mini_m1
