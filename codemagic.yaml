@@ -16,21 +16,17 @@ workflows:
           
       - name: Show files
         script: |
-          echo "${ANDROID_HOME}"
-          ls ${ANDROID_SDK_ROOT}
+          ls ${ANDROID_SDK_ROOT}/cmdline-tools
           echo "---"
-          ls cmdline-tools
-          echo "---"
-          ls cmdline-tools/latest/bin
-          echo "---"
-          ls ${ANDROID_SDK_ROOT}/emulator
+          ls ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
           echo "---"
           ls ${ANDROID_SDK_ROOT}/platform-tools
-          echo "---"
           
       - name: Get Android Image
         script: |
+          adb devices
           yes | sdkmanager --licenses
+          sdkmanager "emulator"
           sdkmanager "system-images;android-31;default;x86_64"
         
       - name: Get Flutter packages
