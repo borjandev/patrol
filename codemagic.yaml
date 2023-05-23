@@ -27,6 +27,20 @@ workflows:
           yes | sdkmanager --licenses
           sdkmanager "emulator"
           sdkmanager "system-images;android-31;default;x86_64"
+          
+      - name: Create and configure emulator
+        script: |
+          export PATH=$PATH:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
+          avdmanager -s create avd -n MyAVD -k "$ANDROID_IMAGE"
+          echo "hw.gpu.enabled=yes" >> ~/.android/avd/MyAVD.avd/config.ini
+          echo "hw.gpu.mode=swiftshader_indirect" >> ~/.android/avd/MyAVD.avd/config.ini
+          echo "hw.ramSize=4096" >> ~/.android/avd/MyAVD.avd/config.ini
+          echo "disk.dataPartition.size=6G" >> ~/.android/avd/MyAVD.avd/config.ini
+          echo "hw.camera.back=virtualscene" >> ~/.android/avd/MyAVD.avd/config.ini
+          echo "vm.heapSize=576" >> ~/.android/avd/MyAVD.avd/config.ini
+          echo "hw.lcd.density=440" >> ~/.android/avd/MyAVD.avd/config.ini
+          echo "hw.lcd.height=2220" >> ~/.android/avd/MyAVD.avd/config.ini
+          echo "hw.lcd.width=1080" >> ~/.android/avd/MyAVD.avd/config.ini
         
       - name: Get Flutter packages
         script: flutter packages pub get
@@ -40,48 +54,18 @@ workflows:
       
       - name: Generate Gradle wrapper
         script: flutter build apk --debug --flavor=does-not-exist || true
-        
-      - name: Set up xcresultparser
-        script: |
-          brew tap a7ex/homebrew-formulae
-          brew install xcresultparser
-
-      - name: Run simulator
-        script: xcrun simctl boot "iPhone 14 Pro Max"
-        
-      - name: Set simulator location
-        script: xcrun simctl location booted set 52.17469,21.03193
-
+  
       - name: Run tests on iPhone 14 Pro Max simulator
         script: |
-          xcrun simctl io booted recordVideo --codec=h264 "video.mp4" &
-          recordingpid="$!"
-          
-          xcrun simctl spawn booted log stream --type log --color none > all_simulator_logs.txt &
-          logpid="$!"
+          export PATH=$PATH:${ANDROID_SDK_ROOT}/emulator
+          emulator @MyAVD -no-snapshot-save -no-window -noaudio -no-boot-anim &
           
           TESTS_EXIT_CODE=0
           patrol test || TESTS_EXIT_CODE=$?
-
-          kill -SIGINT $recordingpid
-          kill -SIGINT $logpid
-          xcrun simctl shutdown all
+          
+          adb -s emulator-5554 emu kill
 
           exit $TESTS_EXIT_CODE
-        ignore_failure: true
-
-      - name: Create test report
-        script: |
-          XCRESULT_PATH="$(find ~/Library/Developer/Xcode/DerivedData -name "*.xcresult" -type d)"
-          echo "XCRESULT_PATH=$XCRESULT_PATH" >> $CM_ENV
-          xcresultparser -o junit "$XCRESULT_PATH" > test_report.xml
-        test_report: test_report.xml
-
-    artifacts:
-      - "all_simulator_logs.txt"
-      - "video.mp4"
-      - "${XCRESULT_PATH}"
-      - "test_report.xml"
   
   test-emulatorwtf:
     name: Patrol tests on emulator.wtf
