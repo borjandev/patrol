@@ -31,7 +31,7 @@ workflows:
       - name: Create and configure emulator
         script: |
           export PATH=$PATH:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
-          avdmanager -s create avd -n MyAVD -k "system-images;android-31;default;x86_64" --disk "6G"
+          avdmanager -s create avd -n MyAVD -k "system-images;android-31;default;x86_64"
         
       - name: Get Flutter packages
         script: flutter packages pub get
@@ -49,7 +49,7 @@ workflows:
       - name: Run tests on emulator
         script: |
           export PATH=$PATH:${ANDROID_SDK_ROOT}/emulator
-          emulator @MyAVD -memory 4096 -gpu swiftshader_indirect -heap-size 576 -no-snapshot-save -no-window -noaudio -no-boot-anim &
+          emulator @MyAVD -memory 4096 -gpu swiftshader_indirect -heap-size 576 -partition-size 6144 -no-snapshot-save -no-window -noaudio -no-boot-anim &
           
           TESTS_EXIT_CODE=0
           patrol test || TESTS_EXIT_CODE=$?
