@@ -53,6 +53,21 @@ workflows:
       - name: Run tests on emulator
         script: |
           export PATH=$PATH:${ANDROID_SDK_ROOT}/emulator
+          cd ${ANDROID_SDK_ROOT}/emulator/qemu/darwin-aarch64
+          cat << EOF > entitlements.xml
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>com.apple.security.hypervisor</key>
+              <true/>
+          </dict>
+          </plist>
+          EOF
+          
+          sudo xcode-select --install
+          codesign -s - --entitlements entitlements.xml --force ./qemu-system-aarch64
+
           emulator @MyAVD &
           
           TESTS_EXIT_CODE=0
