@@ -6,14 +6,17 @@ workflows:
     working_directory: packages/patrol/example
     environment:
       flutter: 3.7.12
-      simulator_env:
-        paths:
-          - ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
-          - ${ANDROID_SDK_ROOT}/emulator
-          - ${ANDROID_SDK_ROOT}/platform-tools
     scripts:
+      - name: Set Android SDK Tools Path
+        script: |
+          export ANDROID_HOME=${ANDROID_SDK_ROOT}
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+          export PATH=$PATH:$ANDROID_HOME/emulator
+          export PATH=$PATH:$ANDROID_HOME/platform-tools
+          
       - name: Show files
         script: |
+          echo "${ANDROID_HOME}"
           ls ${ANDROID_SDK_ROOT}
           echo "---"
           ls cmdline-tools
