@@ -31,16 +31,7 @@ workflows:
       - name: Create and configure emulator
         script: |
           export PATH=$PATH:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
-          avdmanager -s create avd -n MyAVD -k "system-images;android-31;default;x86_64"
-          echo "hw.gpu.enabled=yes" >> ~/.android/avd/MyAVD.avd/config.ini
-          echo "hw.gpu.mode=swiftshader_indirect" >> ~/.android/avd/MyAVD.avd/config.ini
-          echo "hw.ramSize=4096" >> ~/.android/avd/MyAVD.avd/config.ini
-          echo "disk.dataPartition.size=6G" >> ~/.android/avd/MyAVD.avd/config.ini
-          echo "hw.camera.back=virtualscene" >> ~/.android/avd/MyAVD.avd/config.ini
-          echo "vm.heapSize=576" >> ~/.android/avd/MyAVD.avd/config.ini
-          echo "hw.lcd.density=440" >> ~/.android/avd/MyAVD.avd/config.ini
-          echo "hw.lcd.height=2220" >> ~/.android/avd/MyAVD.avd/config.ini
-          echo "hw.lcd.width=1080" >> ~/.android/avd/MyAVD.avd/config.ini
+          avdmanager -s create avd -n MyAVD -k "system-images;android-31;default;x86_64" --disk "6G"
         
       - name: Get Flutter packages
         script: flutter packages pub get
@@ -55,10 +46,10 @@ workflows:
       - name: Generate Gradle wrapper
         script: flutter build apk --debug --flavor=does-not-exist || true
   
-      - name: Run tests on iPhone 14 Pro Max simulator
+      - name: Run tests on emulator
         script: |
           export PATH=$PATH:${ANDROID_SDK_ROOT}/emulator
-          emulator @MyAVD -no-snapshot-save -no-window -noaudio -no-boot-anim &
+          emulator @MyAVD -memory 4096 -gpu swiftshader_indirect -heap-size 576 -no-snapshot-save -no-window -noaudio -no-boot-anim &
           
           TESTS_EXIT_CODE=0
           patrol test || TESTS_EXIT_CODE=$?
