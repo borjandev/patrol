@@ -10,9 +10,9 @@ workflows:
       - name: Set Android SDK Tools Path
         script: |
           export ANDROID_HOME=${ANDROID_SDK_ROOT}
-          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
-          export PATH=$PATH:$ANDROID_HOME/emulator
-          export PATH=$PATH:$ANDROID_HOME/platform-tools
+          export PATH=$PATH:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
+          export PATH=$PATH:${ANDROID_SDK_ROOT}/emulator
+          export PATH=$PATH:${ANDROID_SDK_ROOT}/platform-tools
           
       - name: Show files
         script: |
@@ -20,11 +20,10 @@ workflows:
           echo "---"
           ls ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
           echo "---"
-          ls ${ANDROID_SDK_ROOT}/platform-tools
           
       - name: Get Android Image
         script: |
-          adb devices
+          export PATH=$PATH:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin
           yes | sdkmanager --licenses
           sdkmanager "emulator"
           sdkmanager "system-images;android-31;default;x86_64"
