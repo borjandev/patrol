@@ -49,10 +49,9 @@ workflows:
       
       - name: Generate Gradle wrapper
         script: flutter build apk --debug --flavor=does-not-exist || true
-  
-      - name: Run tests on emulator
+        
+      - name: Magic
         script: |
-          export PATH=$PATH:${ANDROID_SDK_ROOT}/emulator
           cd ${ANDROID_SDK_ROOT}/emulator/qemu/darwin-aarch64
           cat << EOF > entitlements.xml
           <?xml version="1.0" encoding="UTF-8"?>
@@ -67,6 +66,10 @@ workflows:
           
           sudo xcode-select --install
           codesign -s - --entitlements entitlements.xml --force ./qemu-system-aarch64
+  
+      - name: Run tests on emulator
+        script: |
+          export PATH=$PATH:${ANDROID_SDK_ROOT}/emulator
 
           emulator @MyAVD &
           
