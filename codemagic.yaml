@@ -102,17 +102,17 @@ workflows:
         script: patrol build android
       
       - name: Run tests with emulator.wtf
-        script: |
-          ew-cli \
-            --app build/app/outputs/apk/debug/app-debug.apk \
-            --test build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
-            --num-shards 3 \
-            --use-orchestrator \
-            --clear-package-data \
-            --record-video \
-            --timeout 10m \
-            --environment-variables packageName="pl.leancode.patrol.example" \
-            --outputs-dir test_outputs \
+        script: >
+          ew-cli
+            --app build/app/outputs/apk/debug/app-debug.apk
+            --test build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+            --num-shards 3
+            --use-orchestrator
+            --clear-package-data
+            --record-video
+            --timeout 10m
+            --environment-variables packageName="pl.leancode.patrol.example"
+            --outputs-dir test_outputs
             --outputs summary,merged_results_xml,coverage,pulled_dirs,results_xml,logcat,captured_video
         test_report: test_outputs/*.xml
         ignore_failure: true
