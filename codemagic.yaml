@@ -91,20 +91,15 @@ workflows:
       flutter: 3.7.12
 
     scripts:
-      - name: Get Flutter packages
-        script: flutter packages pub get
-
-      - name: Preload Flutter artifacts
-        script: flutter precache
-
       - name: Set up Patrol CLI
         working_directory: packages/patrol_cli
         script: dart pub global activate --source path . && patrol
       
       - name: Generate Gradle wrapper
         script: flutter build apk --debug --flavor=does-not-exist || true
-          
-      - patrol build android
+
+      - name: Build patrol tests
+        script: patrol build android
       
       - name: Run tests with emulator.wtf
         script: |
