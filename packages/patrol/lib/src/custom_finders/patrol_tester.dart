@@ -267,7 +267,7 @@ class PatrolTester {
         timeout: visibleTimeout,
       );
       await tester.tap(resolvedFinder.first);
-      final settle = _choosesettlePolicy(andSettle, settlePolicy);
+      final settle = _chooseSettlePolicy(andSettle, settlePolicy);
       await _performPump(
         settlePolicy: settle,
         settleTimeout: settleTimeout,
@@ -314,7 +314,7 @@ class PatrolTester {
         timeout: visibleTimeout,
       );
       await tester.enterText(resolvedFinder.first, text);
-      final settle = _choosesettlePolicy(andSettle, settlePolicy);
+      final settle = _chooseSettlePolicy(andSettle, settlePolicy);
       await _performPump(
         settlePolicy: settle,
         settleTimeout: settleTimeout,
@@ -428,7 +428,7 @@ class PatrolTester {
       }
       await Scrollable.ensureVisible(tester.firstElement(finder));
 
-      final settle = _choosesettlePolicy(andSettle, settlePolicy);
+      final settle = _chooseSettlePolicy(andSettle, settlePolicy);
       await _performPump(
         settlePolicy: settle,
         settleTimeout: config.settleTimeout,
@@ -479,7 +479,7 @@ class PatrolTester {
       }
       await Scrollable.ensureVisible(tester.firstElement(finder));
 
-      final settle = _choosesettlePolicy(andSettle, settlePolicy);
+      final settle = _chooseSettlePolicy(andSettle, settlePolicy);
       await _performPump(
         settlePolicy: settle,
         settleTimeout: config.settleTimeout,
@@ -531,7 +531,7 @@ class PatrolTester {
           break;
       }
 
-      final settle = _choosesettlePolicy(andSettle, settlePolicy);
+      final settle = _chooseSettlePolicy(andSettle, settlePolicy);
       final resolvedFinder = await dragUntilExists(
         finder: finder,
         view: scrollablePatrolFinder.first,
@@ -587,7 +587,7 @@ class PatrolTester {
           break;
       }
 
-      final settle = _choosesettlePolicy(andSettle, settlePolicy);
+      final settle = _chooseSettlePolicy(andSettle, settlePolicy);
       final resolvedFinder = await dragUntilVisible(
         finder: finder,
         view: scrollablePatrolFinder.first,
@@ -620,7 +620,7 @@ class PatrolTester {
     }
   }
 
-  SettlePolicy? _choosesettlePolicy(
+  SettlePolicy? _chooseSettlePolicy(
     bool? andSettle,
     SettlePolicy? settlePolicy,
   ) {
