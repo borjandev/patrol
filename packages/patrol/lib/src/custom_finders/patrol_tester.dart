@@ -463,23 +463,31 @@ class PatrolTester {
     required Offset moveStep,
     int maxIteration = defaultScrollMaxIteration,
     Duration duration = const Duration(milliseconds: 50),
+    Duration dragDuration = const Duration(milliseconds: 1000),
     @Deprecated('Use settleBeahvior argument instead') bool? andSettle,
     SettlePolicy? settlePolicy,
+    SettlePolicy? settlingBetweenDragsPolicy = SettlePolicy.noSettle,
   }) {
     return TestAsyncUtils.guard(() async {
       var viewPatrolFinder = PatrolFinder(finder: view, tester: this);
       await viewPatrolFinder.waitUntilVisible();
-      viewPatrolFinder = viewPatrolFinder.first;
+      viewPatrolFinder = (await viewPatrolFinder.waitUntilVisible()).first;
+      final settle = _chooseSettlePolicy(andSettle, settlePolicy);
 
       var iterationsLeft = maxIteration;
       while (iterationsLeft > 0 && finder.hitTestable().evaluate().isEmpty) {
-        await tester.drag(viewPatrolFinder, moveStep);
-        await tester.pump(duration);
+        await tester.timedDrag(viewPatrolFinder, moveStep, dragDuration);
+        await _performPump(
+          settlePolicy: settlingBetweenDragsPolicy,
+          settleTimeout: config.settleTimeout,
+        );
         iterationsLeft -= 1;
       }
-      await Scrollable.ensureVisible(tester.firstElement(finder));
 
-      final settle = _chooseSettlePolicy(andSettle, settlePolicy);
+      if (iterationsLeft <= 0) {
+        throw Exception();
+      }
+
       await _performPump(
         settlePolicy: settle,
         settleTimeout: config.settleTimeout,
@@ -501,6 +509,7 @@ class PatrolTester {
     required Finder finder,
     Finder? scrollable,
     double delta = defaultScrollDelta,
+    AxisDirection scrollDirection = AxisDirection.down,
     int maxScrolls = defaultScrollMaxIteration,
     Duration duration = const Duration(milliseconds: 50),
     @Deprecated('Use settleBeahvior argument instead') bool? andSettle,
@@ -557,22 +566,31 @@ class PatrolTester {
     required Finder finder,
     Finder? scrollable,
     double delta = defaultScrollDelta,
+    AxisDirection? scrollDirection,
     int maxScrolls = defaultScrollMaxIteration,
     Duration duration = const Duration(milliseconds: 50),
     @Deprecated('Use settleBeahvior argument instead') bool? andSettle,
     SettlePolicy? settlePolicy,
   }) async {
     assert(maxScrolls > 0, 'maxScrolls must be positive number');
-    scrollable ??= find.byType(Scrollable);
 
+    scrollable ??= find.byType(Scrollable);
     final scrollablePatrolFinder = await PatrolFinder(
       finder: scrollable,
       tester: this,
     ).waitUntilVisible();
+    if (scrollDirection == null) {
+      if (scrollable.evaluate().first.widget is Scrollable) {
+        scrollDirection =
+            tester.firstWidget<Scrollable>(scrollable).axisDirection;
+      } else {
+        scrollDirection = AxisDirection.down;
+      }
+    }
 
     return TestAsyncUtils.guard<PatrolFinder>(() async {
       Offset moveStep;
-      switch (tester.firstWidget<Scrollable>(scrollable!).axisDirection) {
+      switch (scrollDirection!) {
         case AxisDirection.up:
           moveStep = Offset(0, delta);
           break;

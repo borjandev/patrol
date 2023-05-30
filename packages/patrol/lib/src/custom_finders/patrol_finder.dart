@@ -266,6 +266,7 @@ class PatrolFinder extends MatchFinder {
   Future<PatrolFinder> scrollTo({
     Finder? scrollable,
     double step = defaultScrollDelta,
+    AxisDirection? scrollDirection,
     int maxScrolls = defaultScrollMaxIteration,
     Duration duration = const Duration(milliseconds: 50),
     @Deprecated('Use settleBeahvior argument instead') bool? andSettle,
@@ -275,6 +276,7 @@ class PatrolFinder extends MatchFinder {
       finder: finder,
       scrollable: scrollable,
       delta: step,
+      scrollDirection: scrollDirection,
       maxScrolls: maxScrolls,
       duration: duration,
       settlePolicy: _chooseSettlePolicy(andSettle, settlePolicy),
