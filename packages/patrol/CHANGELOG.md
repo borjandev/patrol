@@ -1,3 +1,15 @@
+## 2.0.0-dev.4
+
+- Don't abuse static fields and methods in `PatrolJUnitRunner` (#1354)
+- **Breaking:** Change `MainActivityTest.java` template (#1354)
+
+## 2.0.0-dev.3
+
+- Fix Hot Restart (#1347)
+- Fix `enterText()` not working on physical iOS devices (#1349)
+- **Breaking:** Change `MainActivityTest.java` template. Thanks to this change,
+  app's package name no longer has to be passed in manually (#1348)
+
 ## 2.0.0-dev.2
 
 - Fix test bundling not working on physical iOS devices (works only with `patrol

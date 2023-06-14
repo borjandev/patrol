@@ -1,6 +1,7 @@
 // Terminology note:
 // "Run a test" is used interchangeably with "execute a test".
-// "Run a Dart test" is used interchangeably with "request execution of a Dart test" and "execute Dart test".
+// "Run a Dart test" is used interchangeably with "request execution of a Dart test" and "execute a Dart test".
+// "ATO" is short for "Android Test Orchestrator".
 
 package pl.leancode.patrol;
 
@@ -13,13 +14,17 @@ import io.grpc.StatusRuntimeException;
 import pl.leancode.patrol.contracts.Contracts.DartTestGroup;
 
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 import static pl.leancode.patrol.contracts.Contracts.RunDartTestResponse;
 
+/**
+ * <p>
+ * A customized AndroidJUnitRunner that enables Patrol on Android.
+ * </p>
+ */
 public class PatrolJUnitRunner extends AndroidJUnitRunner {
-    private static PatrolAppServiceClient patrolAppServiceClient;
+    public PatrolAppServiceClient patrolAppServiceClient;
 
     @Override
     protected boolean shouldWaitForActivitiesToComplete() {
@@ -30,46 +35,60 @@ public class PatrolJUnitRunner extends AndroidJUnitRunner {
     public void onCreate(Bundle arguments) {
         super.onCreate(arguments);
 
-        // We need to know what Dart tests exist before we can request their execution.
-        // To gather the Dart tests, we need to run the app during the Orchestrator's initial run.
-        // But by default, AndroidJUnitRunner doesn't run the app during the initial run, when it gathers the tests to execute.
-        // That's why we override this onCreate().
-
-        // This is only true when the Orchestrator requests a list of tests from the app during the initial run.
-        String initialRun = arguments.getString("listTestsForOrchestrator");
-
-        // This value comes from app's build.gradle. This is not ideal but works.
-        String packageName = arguments.getString("packageName");
+        // This is only true when the ATO requests a list of tests from the app during the initial run.
+        boolean isInitialRun = Boolean.parseBoolean(arguments.getString("listTestsForOrchestrator"));
 
         Logger.INSTANCE.i("--------------------------------");
-        Logger.INSTANCE.i("PatrolJUnitRunner.onCreate(), " + "packageName: " + packageName + (Objects.equals(initialRun, "true") ? " (initial run)" : ""));
+        Logger.INSTANCE.i("PatrolJUnitRunner.onCreate() " + (isInitialRun ? "(initial run)" : ""));
+    }
 
-        // This code is based on ActivityTestRule#launchActivity.
+    /**
+     * <p>
+     * The native test runner needs to know what tests exist before it can execute them.
+     * To gather the tests, the native test runner (by default: AndroidJUnitRunner) runs
+     * the instrumentation during the ATO's initial run and collects the tests.
+     * </p>
+     *
+     * <p>
+     * This default behavior doesn't work with Flutter apps. That's because in Flutter
+     * apps, the tests are in the app itself, so running only the instrumentation
+     * during the initial run is not enough.
+     * The app must also be run, and queried for Dart tests That's what this method does.
+     * </p>
+     */
+    public void setUp(Class<?> activityClass) {
+        Logger.INSTANCE.i("PatrolJUnitRunner.setUp(): activityClass = " + activityClass.getCanonicalName());
+
+        // This code launches the app under test. It's based on ActivityTestRule#launchActivity.
         // It's simpler because we don't have the need for that much synchronization.
         // Currently, the only synchronization point we're interested in is when the app under test returns the list of tests.
         Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
         Intent intent = new Intent(Intent.ACTION_MAIN);
-        intent.setClassName(instrumentation.getTargetContext(), packageName + ".MainActivity"); // TODO: Some users may want to customize it
+        intent.setClassName(instrumentation.getTargetContext(), activityClass.getCanonicalName());
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         instrumentation.getContext().startActivity(intent);
 
         PatrolServer patrolServer = new PatrolServer();
         patrolServer.start(); // Gets killed when the instrumentation process dies. We're okay with this.
 
-        patrolAppServiceClient = new PatrolAppServiceClient();
+        patrolAppServiceClient = createAppServiceClient();
+    }
+
+    public PatrolAppServiceClient createAppServiceClient() {
+        return new PatrolAppServiceClient();
     }
 
     /**
      * <p>
-     * Waits until PatrolAppService, running in the Dart side of the app, reports that it's ready to be asked about
-     * the list of Dart tests.
+     * Waits until PatrolAppService, running in the Dart side of the app, reports
+     * that it's ready to be asked about the list of Dart tests.
      * </p>
      *
      * <p>
-     * PatrolAppService becomes ready once the Dart test "patrol_test_explorer" finishes running.
+     * PatrolAppService becomes ready once the special Dart test named "patrol_test_explorer" finishes running.
      * </p>
      */
-    public static void waitForPatrolAppService() {
+    public void waitForPatrolAppService() {
         final String TAG = "PatrolJUnitRunner.setUp(): ";
 
         try {
@@ -83,7 +102,7 @@ public class PatrolJUnitRunner extends AndroidJUnitRunner {
         Logger.INSTANCE.i(TAG + "PatrolAppService is ready to report Dart tests");
     }
 
-    public static Object[] listDartTests() {
+    public Object[] listDartTests() {
         final String TAG = "PatrolJUnitRunner.listDartTests(): ";
 
         try {
@@ -101,7 +120,7 @@ public class PatrolJUnitRunner extends AndroidJUnitRunner {
      * Requests execution of a Dart test and waits for it to finish.
      * Throws AssertionError if the test fails.
      */
-    public static RunDartTestResponse runDartTest(String name) {
+    public RunDartTestResponse runDartTest(String name) {
         final String TAG = "PatrolJUnitRunner.runDartTest(" + name + "): ";
 
         try {
